@@ -1,0 +1,17 @@
+# pointcloud_to_laserscan：将 /lidar_points (PointCloud2) 转为 /scan (LaserScan)
+# 取点云在某一高度范围内的点投影到 2D，供 slam_toolbox 使用
+
+pointcloud_to_laserscan_node:
+  ros__parameters:
+    # 高度范围（米）：只保留该高度内的点做 2D 投影，按你的雷达安装调整
+    min_height: -0.5
+    max_height: 0.5
+    angle_min: -3.14159
+    angle_max: 3.14159
+    angle_increment: 0.00872665   # ~0.5°
+    range_min: 0.5
+    range_max: 30.0
+    scan_time: 0.0333333
+    use_inf: true
+    # 点云已在 lidar_init 下时可不必指定 target_frame
+    # target_frame: lidar_init
