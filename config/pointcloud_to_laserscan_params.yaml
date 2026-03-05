@@ -8,10 +8,10 @@ pointcloud_to_laserscan_node:
     max_height: 0.5
     angle_min: -3.14159
     angle_max: 3.14159
-    angle_increment: 0.0174533   # ~1°（比 0.5° 省算力）
+    angle_increment: 0.00872665   # ~1°（比 0.5° 省算力）
     range_min: 0.5
     range_max: 30.0
-    scan_time: 0.0333333
+    scan_time: 0.2
     use_inf: true
     # 点云已在 lidar_init 下时可不必指定 target_frame
     # target_frame: lidar_init

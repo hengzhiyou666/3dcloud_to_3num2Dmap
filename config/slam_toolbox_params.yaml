@@ -7,64 +7,64 @@
 slam_toolbox:
   ros__parameters:
     # 与 tf 一致：odom 父帧用 odom_frame_id_override（vita_lidar），子帧用 /odometry 的 child_frame_id（当前 bag 为 head）
-    odom_frame: vita_lidar
-    map_frame: map
-    base_frame: head
+    odom_frame: vita_lidar        # 里程计坐标系名（与 bag 中 odometry 的 frame_id 一致）
+    map_frame: map                # 地图坐标系名，一般保持 map
+    base_frame: head              # 机器人/雷达机体坐标系（与 bag 中 odometry 的 child_frame_id 一致）
 
-    scan_topic: /scan
-    use_map_saver: true
-    mode: mapping
+    scan_topic: /scan             # 订阅的激光话题，由 pointcloud_to_laserscan 输出
+    use_map_saver: true           # 允许使用 map_saver 保存地图
+    mode: mapping                 # 运行模式：mapping=在线建图，localization=纯定位
 
-    solver_plugin: solver_plugins::CeresSolver
-    ceres_linear_solver: SPARSE_NORMAL_CHOLESKY
-    ceres_preconditioner: SCHUR_JACOBI
-    ceres_trust_strategy: LEVENBERG_MARQUARDT
-    ceres_dogleg_type: TRADITIONAL_DOGLEG
-    ceres_loss_function: None
+    solver_plugin: solver_plugins::CeresSolver      # 使用 Ceres 作为后端优化器
+    ceres_linear_solver: SPARSE_NORMAL_CHOLESKY     # 线性求解器类型
+    ceres_preconditioner: SCHUR_JACOBI              # 预条件器
+    ceres_trust_strategy: LEVENBERG_MARQUARDT       # 信赖域策略
+    ceres_dogleg_type: TRADITIONAL_DOGLEG           # dogleg 类型
+    ceres_loss_function: None                       # 损失函数（None 表示不使用鲁棒核）
 
-    debug_logging: false
-    throttle_scans: 2
-    transform_publish_period: 0.05
-    map_update_interval: 3.0
-    resolution: 0.05
-    restamp_tf: false
-    min_laser_range: 0.5
-    max_laser_range: 20.0
-    minimum_time_interval: 0.5
-    transform_timeout: 0.2
-    tf_buffer_duration: 30.0
-    stack_size_to_use: 40000000
-    enable_interactive_mode: true
+    debug_logging: false          # 是否输出调试日志
+    throttle_scans: 1             # 处理扫描的抽稀倍率，1 表示每帧都用
+    transform_publish_period: 0.05 # 发布 map->odom TF 的周期(s)
+    map_update_interval: 0.2      # 更新栅格地图的时间间隔(s)
+    resolution: 0.05              # 地图分辨率(m/栅格)
+    restamp_tf: false             # 是否重写 TF 时间戳
+    min_laser_range: 0.5          # 使用的激光最小距离(m)
+    max_laser_range: 20.0         # 使用的激光最大距离(m)
+    minimum_time_interval: 0.2    # 连续两帧用于优化的最小时间间隔(s)
+    transform_timeout: 0.2        # 等待 TF 的超时时间(s)
+    tf_buffer_duration: 30.0      # TF 缓存时间长度(s)
+    stack_size_to_use: 40000000   # SLAM 线程栈大小
+    enable_interactive_mode: true # 开启 RViz 交互模式
 
-    use_scan_matching: true
-    use_scan_barycenter: true
-    minimum_travel_distance: 0.4
-    minimum_travel_heading: 0.5
-    check_min_dist_and_heading_precisely: false
-    scan_buffer_size: 10
-    scan_buffer_maximum_scan_distance: 10.0
-    link_match_minimum_response_fine: 0.1
-    link_scan_maximum_distance: 1.5
-    loop_search_maximum_distance: 3.0
-    do_loop_closing: true
-    loop_match_minimum_chain_size: 10
-    loop_match_maximum_variance_coarse: 3.0
-    loop_match_minimum_response_coarse: 0.35
-    loop_match_minimum_response_fine: 0.45
+    use_scan_matching: true       # 是否使用 scan matching 估计位姿（核心功能）
+    use_scan_barycenter: true     # 使用激光点重心辅助估计
+    minimum_travel_distance: 0.4  # 距离移动超过该值才添加关键帧(m)
+    minimum_travel_heading: 0.5   # 转角超过该值才添加关键帧(rad)
+    check_min_dist_and_heading_precisely: false # 是否精确检查上述阈值
+    scan_buffer_size: 10          # 本地匹配缓存的 scan 帧数
+    scan_buffer_maximum_scan_distance: 10.0 # 缓存 scan 之间允许的最大相对距离(m)
+    link_match_minimum_response_fine: 0.1   # 邻近帧精匹配的最小响应阈值
+    link_scan_maximum_distance: 1.5         # 邻近 scan 之间的最大连接距离(m)
+    loop_search_maximum_distance: 3.0       # 回环搜索的最大距离(m)
+    do_loop_closing: true         # 是否开启闭环检测与回环优化
+    loop_match_minimum_chain_size: 10       # 回环匹配所需的最小 scan 链长度
+    loop_match_maximum_variance_coarse: 3.0 # 粗匹配允许的最大方差
+    loop_match_minimum_response_coarse: 0.35 # 粗匹配最小响应
+    loop_match_minimum_response_fine: 0.45   # 精匹配最小响应
 
-    correlation_search_space_dimension: 0.5
-    correlation_search_space_resolution: 0.01
-    correlation_search_space_smear_deviation: 0.1
-    loop_search_space_dimension: 8.0
-    loop_search_space_resolution: 0.05
-    loop_search_space_smear_deviation: 0.03
-    distance_variance_penalty: 0.5
-    angle_variance_penalty: 1.0
-    fine_search_angle_offset: 0.00349
-    coarse_search_angle_offset: 0.349
-    coarse_angle_resolution: 0.0349
-    minimum_angle_penalty: 0.9
-    minimum_distance_penalty: 0.5
-    use_response_expansion: true
-    min_pass_through: 2
-    occupancy_threshold: 0.1
+    correlation_search_space_dimension: 0.5        # 局部相关性匹配的搜索窗口尺寸(m)
+    correlation_search_space_resolution: 0.01      # 局部匹配搜索分辨率(m)
+    correlation_search_space_smear_deviation: 0.1  # 匹配响应平滑的标准差
+    loop_search_space_dimension: 8.0               # 回环搜索窗口尺寸(m)
+    loop_search_space_resolution: 0.05             # 回环搜索分辨率(m)
+    loop_search_space_smear_deviation: 0.03        # 回环响应平滑标准差
+    distance_variance_penalty: 0.5                 # 位移差惩罚权重
+    angle_variance_penalty: 1.0                    # 角度差惩罚权重
+    fine_search_angle_offset: 0.00349              # 精细搜索角度步长(rad)
+    coarse_search_angle_offset: 0.349              # 粗略搜索角度范围(rad)
+    coarse_angle_resolution: 0.0349                # 粗略搜索角度分辨率(rad)
+    minimum_angle_penalty: 0.9                     # 最小角度惩罚因子
+    minimum_distance_penalty: 0.5                  # 最小距离惩罚因子
+    use_response_expansion: true                   # 是否对匹配响应做扩展/插值
+    min_pass_through: 2                            # 每个栅格至少需要通过的射线数
+    occupancy_threshold: 0.1                       # 判定为占据的概率阈值
