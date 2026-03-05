@@ -10,7 +10,7 @@ from rclpy.node import Node
 from nav_msgs.msg import OccupancyGrid
 
 
-# 与 map_saver 一致：栅格值 -> PGM 像素
+# 与 222.pgm / map_saver 一致：PGM 中 0=黑(障碍) 254=白(可通行) 205=灰(未知)，yaml negate: 0
 OCCUPIED = 0
 FREE = 254
 UNKNOWN = 205
@@ -23,7 +23,12 @@ class MapToDiskNode(Node):
         self.declare_parameter('output_dir', '')
         self.declare_parameter('file_prefix', 'map_latest')
         self.declare_parameter('update_interval_sec', 2.0)
+        self.declare_parameter('invert_for_display', False)
         self._output_dir = self.get_parameter('output_dir').get_parameter_value().string_value
+        try:
+            self._invert_for_display = self.get_parameter('invert_for_display').get_parameter_value().bool_value
+        except Exception:
+            self._invert_for_display = self.get_parameter('invert_for_display').get_parameter_value().string_value.lower() in ('1', 'true', 'yes')
         self._prefix = self.get_parameter('file_prefix').get_parameter_value().string_value
         try:
             self._interval_sec = self.get_parameter('update_interval_sec').get_parameter_value().double_value
@@ -59,20 +64,25 @@ class MapToDiskNode(Node):
         h, w = msg.info.height, msg.info.width
         n = h * w
         out = bytearray(n)
+        # invert_for_display: 写入 255-value，使在“0=白”的查看器里显示为 黑=障碍、白=可通行
+        inv = 255 if self._invert_for_display else 0
         for i in range(n):
             v = msg.data[i] if i < len(msg.data) else -1
-            out[i] = FREE if v == 100 else (OCCUPIED if v == 0 else UNKNOWN)
+            # ROS OccupancyGrid: 0=free, 100=occupied, -1=unknown -> PGM 0=黑(障碍) 254=白(可通行)
+            raw = OCCUPIED if v == 100 else (FREE if v == 0 else UNKNOWN)
+            out[i] = (255 - raw) if inv else raw
         with open(path, 'wb') as f:
             f.write(b'P5\n%d %d\n255\n' % (w, h))
             f.write(out)
 
     def _write_yaml(self, path: str, msg: OccupancyGrid, pgm_basename: str):
         o = msg.info.origin.position
+        negate = 1 if self._invert_for_display else 0
         with open(path, 'w') as f:
             f.write(f'image: {pgm_basename}\n')
             f.write(f'resolution: {msg.info.resolution}\n')
             f.write(f'origin: [{o.x}, {o.y}, 0.0]\n')
-            f.write('negate: 0\noccupied_threshold: 0.65\nfree_threshold: 0.196\n')
+            f.write(f'negate: {negate}\noccupied_threshold: 0.65\nfree_threshold: 0.196\n')
 
 
 def main(args=None):

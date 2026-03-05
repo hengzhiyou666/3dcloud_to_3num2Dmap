@@ -136,6 +136,7 @@ def generate_launch_description():
             {'output_dir': map_output_dir},
             {'file_prefix': map_file_prefix},
             {'update_interval_sec': map_update_interval_sec},
+            {'invert_for_display': False},
         ],
     )
 
