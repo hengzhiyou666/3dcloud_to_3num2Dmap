@@ -30,8 +30,23 @@ class OdomToTfNode(Node):
             10,
         )
         self._logged_first = False
+        self._odom_count = 0
+        self._odom_ts_first = None
+        self._perf_last_log_ns = None
 
     def _odom_cb(self, msg: Odometry):
+        self._odom_count += 1
+        now_ns = self.get_clock().now().nanoseconds
+        if self._odom_ts_first is None:
+            self._odom_ts_first = now_ns
+        elif self._odom_count % 150 == 0:
+            if self._perf_last_log_ns is None:
+                self._perf_last_log_ns = now_ns
+            elif (now_ns - self._perf_last_log_ns) >= 5_000_000_000:
+                self._perf_last_log_ns = now_ns
+                dt_s = (now_ns - self._odom_ts_first) / 1e9
+                rate = self._odom_count / dt_s if dt_s > 0 else 0
+                self.get_logger().info(f'[perf] /odometry ~{rate:.1f} Hz (n={self._odom_count})')
         if not self._logged_first:
             self._logged_first = True
             self.get_logger().info(
