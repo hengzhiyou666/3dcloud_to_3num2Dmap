@@ -25,6 +25,7 @@ setup(
     entry_points={
         'console_scripts': [
             'odom_to_tf_node = cloud_to_2d_slam.odom_to_tf_node:main',
+            'map_to_disk_node = cloud_to_2d_slam.map_to_disk_node:main',
         ],
     },
 )

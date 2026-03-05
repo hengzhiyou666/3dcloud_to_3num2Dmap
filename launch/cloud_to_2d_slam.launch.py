@@ -11,8 +11,9 @@ import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration
+from launch.substitutions import LaunchConfiguration, EqualsSubstitution
 from launch_ros.actions import Node
 from launch_ros.descriptions import ParameterFile
 
@@ -64,6 +65,30 @@ def generate_launch_description():
         default_value=os.path.join(pkg_share, 'config', 'pointcloud_to_laserscan_params.yaml'),
         description='Full path to pointcloud_to_laserscan params YAML.',
     )
+    save_map_to_disk = LaunchConfiguration('save_map_to_disk', default='false')
+    map_output_dir = LaunchConfiguration('map_output_dir', default='')
+    map_file_prefix = LaunchConfiguration('map_file_prefix', default='map_latest')
+    map_update_interval_sec = LaunchConfiguration('map_update_interval_sec', default='2.0')
+    declare_save_map_to_disk = DeclareLaunchArgument(
+        'save_map_to_disk',
+        default_value='false',
+        description='If true, periodically write /map to disk (map_latest.pgm + .yaml).',
+    )
+    declare_map_output_dir = DeclareLaunchArgument(
+        'map_output_dir',
+        default_value='',
+        description='Directory for real-time map files (default: current dir).',
+    )
+    declare_map_file_prefix = DeclareLaunchArgument(
+        'map_file_prefix',
+        default_value='map_latest',
+        description='Prefix for real-time map files (map_latest.pgm/.yaml).',
+    )
+    declare_map_update_interval = DeclareLaunchArgument(
+        'map_update_interval_sec',
+        default_value='2.0',
+        description='Write map to disk every N seconds when save_map_to_disk is true.',
+    )
 
     odom_to_tf_node = Node(
         package='cloud_to_2d_slam',
@@ -99,6 +124,21 @@ def generate_launch_description():
         }.items(),
     )
 
+    map_to_disk_node = Node(
+        package='cloud_to_2d_slam',
+        executable='map_to_disk_node',
+        name='map_to_disk_node',
+        output='screen',
+        condition=IfCondition(EqualsSubstitution(save_map_to_disk, 'true')),
+        parameters=[
+            {'use_sim_time': use_sim_time},
+            {'map_topic': '/map'},
+            {'output_dir': map_output_dir},
+            {'file_prefix': map_file_prefix},
+            {'update_interval_sec': map_update_interval_sec},
+        ],
+    )
+
     return LaunchDescription([
         declare_use_sim_time,
         declare_odom_topic,
@@ -106,7 +146,12 @@ def generate_launch_description():
         declare_pointcloud_topic,
         declare_slam_params,
         declare_pcl_params,
+        declare_save_map_to_disk,
+        declare_map_output_dir,
+        declare_map_file_prefix,
+        declare_map_update_interval,
         odom_to_tf_node,
         pointcloud_to_laserscan_node,
         slam_toolbox_launch,
+        map_to_disk_node,
     ])
